@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DynamoDB JSON to JSON</title>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/aws-sdk/2.422.0/aws-sdk.min.js"
+      integrity="sha256-Da7C+cls1rahhFZCYIqCtpuiTu3Q3OYo2z8H7i394Ss="
+      crossorigin="anonymous"
+    ></script>
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        background-color: #f4f4f4;
+      }
+
+      h1 {
+        color: #333;
+        margin: 10px 0; /* Decreased margin from the top */
+      }
+
+      .row {
+        display: flex;
+        width: 100%;
+        justify-content: space-around;
+      }
+
+      .container {
+        width: 45%;
+        margin: 10px;
+        padding: 20px;
+        background-color: #fff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        border-radius: 5px;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 500px; /* Increased text area height */
+        margin-bottom: 10px;
+        padding: 10px;
+        box-sizing: border-box;
+      }
+
+      button {
+        width: 100%;
+        padding: 10px;
+        margin-top: 5px;
+        background-color: #4caf50;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      button.copy-btn {
+        background-color: #ddd;
+        color: #333;
+        transition: background-color 0.3s; /* Added transition effect */
+      }
+
+      button.copy-btn:hover {
+        background-color: #999; /* Darker gray on hover */
+      }
+
+      button:hover {
+        background-color: #45a049;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>Un/marshall DynamoDB JSON</h1>
+    <div class="row">
+      <div class="container">
+        <textarea id="dynamodb" placeholder="Enter DynamoDB JSON"></textarea>
+        <button id="unmarshallBtn">Unmarshall to JSON</button>
+        <button class="copy-btn" id="copyDynamoDBBtn">Copy to Clipboard</button>
+      </div>
+      <div class="container">
+        <textarea id="json" placeholder="Enter JSON"></textarea>
+        <button id="marshallBtn">Marshall to DynamoDB JSON</button>
+        <button class="copy-btn" id="copyJsonBtn">Copy to Clipboard</button>
+      </div>
+    </div>
+
+    <script>
+      document
+        .getElementById("unmarshallBtn")
+        .addEventListener("click", unmarshall);
+      document
+        .getElementById("marshallBtn")
+        .addEventListener("click", marshall);
+      document
+        .getElementById("copyDynamoDBBtn")
+        .addEventListener("click", copyDynamoDB);
+      document
+        .getElementById("copyJsonBtn")
+        .addEventListener("click", copyJson);
+
+      function unmarshall() {
+        try {
+          const dynamodbJson =
+            JSON.parse(document.getElementById("dynamodb").value) || {};
+
+          const result = Array.isArray(dynamodbJson)
+            ? dynamodbJson.map((jsonValue) =>
+                AWS.DynamoDB.Converter.unmarshall(jsonValue)
+              )
+            : AWS.DynamoDB.Converter.unmarshall(dynamodbJson);
+
+          document.getElementById("json").value = JSON.stringify(
+            result,
+            null,
+            4
+          );
+        } catch (e) {
+          alert("Couldn't unmarshall that. " + e);
+        }
+      }
+
+      function marshall() {
+        try {
+          const inputJson =
+            JSON.parse(document.getElementById("json").value) || {};
+          const marshalledResult = Array.isArray(inputJson)
+            ? JSON.stringify(
+                inputJson.map((value) =>
+                  AWS.DynamoDB.Converter.marshall(value)
+                ),
+                null,
+                4
+              )
+            : JSON.stringify(
+                AWS.DynamoDB.Converter.marshall(inputJson),
+                null,
+                4
+              );
+
+          document.getElementById("dynamodb").value = marshalledResult;
+        } catch (e) {
+          alert("Couldn't marshall that. " + e);
+        }
+      }
+
+      function copyToClipboard(textAreaId) {
+        const textArea = document.getElementById(textAreaId);
+        textArea.select();
+        document.execCommand("copy");
+      }
+
+      function copyDynamoDB() {
+        copyToClipboard("dynamodb");
+      }
+
+      function copyJson() {
+        copyToClipboard("json");
+      }
+    </script>
+  </body>
+</html>
